@@ -30,8 +30,8 @@ function energy_pos(x, y, J, lat, a = [0,0,0])
 
     up = mod(y,N)+1
     down = mod(y-2,N)+1
-    left = mod(x-2,N) + 1
-    right = mod(x,N) + 1
+    left = mod(x-2,M) + 1
+    right = mod(x,M) + 1
     urc = [mod(x,M)+1,mod(y,N)+1]
     ulc = [mod(x-2,M)+1,mod(y,N)+1]
     lrc = [mod(x,M)+1,mod(y-2,N)+1]
@@ -48,7 +48,6 @@ function energy_pos(x, y, J, lat, a = [0,0,0])
     end
 
 end
-
 
 function test_flip(x, y, J, lat, T)
 """ Checks whether energy allows for a flip or not """
@@ -123,10 +122,58 @@ function four_trans(lat)
       end
     end
 
-    ftx = abs(fft(x))
-    fty = abs(fft(y))
-    ftz = abs(fft(z))
+    ftx = abs.(fft(x))
+    fty = abs.(fft(y))
+    ftz = abs.(fft(z))
 
-    ft = abs(sqrt.(ftx.*ftx + fty.*fty + ftz.*ftz))
+    ft = abs.(sqrt.(ftx.*ftx + fty.*fty + ftz.*ftz))
 return ft
+end
+
+function skyrmion_number(lat)
+    M = size(lat,1)
+    N = size(lat,2)
+    q = 0
+    for i in 1:M
+        for j in 1:N
+            a = lat[i,j]#centre
+            b = lat[i,mod(j-2,N)+1]#down
+            c = lat[mod(i,M)+1,mod(j-2,N)+1]#rightdown
+            d = lat[mod(i,M)+1,j]#right
+            q = q + (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
+        end
+    end
+    return q
+end
+
+function skyrm_nn(i,j,lat)
+    centre = lat[i,j]
+    up = lat[i,mod(j,N)+1]#up
+    down = lat[i,mod(j-2,N)+1]#down
+    left = lat[mod(i-2,M)+1,j]#left
+    right = lat[mod(i,M)+1,mod(j-2,N)+1]#right
+
+    q = (spher_tri_area(centre,up,left) + spher_tri_area(centre,up,right) + spher_tri_area(centre,right,down) + spher_tri_area(centre,left,down))/(4*pi)
+
+    return q
+end
+function spher_tri_area(a,b,c)
+    x = cross(a,b)
+    y = cross(b,c)
+    z = cross(c,a)
+    try
+        a1 = acos(vecdot(x,-z)/vecnorm(x)/vecnorm(-z))
+        a2 = acos(vecdot(y,-x)/vecnorm(y)/vecnorm(-x))
+        a3 = acos(vecdot(z,-y)/vecnorm(z)/vecnorm(-y))
+        return (a1 + a2 + a3 - pi)*sign(vecdot(a,cross(b,c)))
+    catch err
+        if isa(err,DomainError)
+            println(vecdot(x,-z)/vecnorm(x)/vecnorm(-z),vecdot(y,-x)/vecnorm(y)/vecnorm(-x),vecdot(z,-y)/vecnorm(z)/vecnorm(-y))
+            a1 = acos(round(vecdot(x,-z)/vecnorm(x)/vecnorm(-z)))
+            a2 = acos(round(vecdot(y,-x)/vecnorm(y)/vecnorm(-x)))
+            a3 = acos(round(vecdot(z,-y)/vecnorm(z)/vecnorm(-y)))
+            return (a1 + a2 + a3 - pi)*sign(vecdot(a,cross(b,c)))
+        end
+    end
+
 end
