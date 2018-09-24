@@ -24,6 +24,19 @@ function initialise(M::Int, N::Int)
     return lat
 end
 
+function initialise_gauss(M::Int, N::Int)
+    """ Initialising the lattice with random values """
+    #lat = Array{Float64, 3}(N, N)
+    lat = Array{Vector{Float64},2}(M, N);
+    for i = 1:M
+        for j = 1:N
+            lat[i,j] = sample_gauss([1,0,0])
+        end
+    end
+    return lat
+end
+
+
 function energy_pos(x, y, J, lat, a = [0,0,0])
     M = size(lat,1)
     N = size(lat,2)
@@ -137,43 +150,81 @@ function skyrmion_number(lat)
     for i in 1:M
         for j in 1:N
             a = lat[i,j]#centre
-            b = lat[i,mod(j-2,N)+1]#down
-            c = lat[mod(i,M)+1,mod(j-2,N)+1]#rightdown
-            d = lat[mod(i,M)+1,j]#right
+            b = lat[i,mod(j,N)+1]#right
+            c = lat[mod(i,M)+1,mod(j,N)+1]#rightdown
+            d = lat[mod(i,M)+1,j]#down
             q = q + (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
         end
     end
     return q
 end
 
-function skyrm_nn(i,j,lat)
-    centre = lat[i,j]
-    up = lat[i,mod(j,N)+1]#up
-    down = lat[i,mod(j-2,N)+1]#down
-    left = lat[mod(i-2,M)+1,j]#left
-    right = lat[mod(i,M)+1,mod(j-2,N)+1]#right
-
-    q = (spher_tri_area(centre,up,left) + spher_tri_area(centre,up,right) + spher_tri_area(centre,right,down) + spher_tri_area(centre,left,down))/(4*pi)
-
-    return q
-end
 function spher_tri_area(a,b,c)
     x = cross(a,b)
     y = cross(b,c)
     z = cross(c,a)
     try
-        a1 = acos(vecdot(x,-z)/vecnorm(x)/vecnorm(-z))
-        a2 = acos(vecdot(y,-x)/vecnorm(y)/vecnorm(-x))
-        a3 = acos(vecdot(z,-y)/vecnorm(z)/vecnorm(-y))
+        a1 = acos(vecdot(x,-z)/vecnorm(x)/vecnorm(z))
+        a2 = acos(vecdot(y,-x)/vecnorm(y)/vecnorm(x))
+        a3 = acos(vecdot(z,-y)/vecnorm(z)/vecnorm(y))
         return (a1 + a2 + a3 - pi)*sign(vecdot(a,cross(b,c)))
     catch err
         if isa(err,DomainError)
             println(vecdot(x,-z)/vecnorm(x)/vecnorm(-z),vecdot(y,-x)/vecnorm(y)/vecnorm(-x),vecdot(z,-y)/vecnorm(z)/vecnorm(-y))
-            a1 = acos(round(vecdot(x,-z)/vecnorm(x)/vecnorm(-z)))
-            a2 = acos(round(vecdot(y,-x)/vecnorm(y)/vecnorm(-x)))
-            a3 = acos(round(vecdot(z,-y)/vecnorm(z)/vecnorm(-y)))
+            a1 = acos(round(vecdot(x,-z)/vecnorm(x)/vecnorm(z)))
+            a2 = acos(round(vecdot(y,-x)/vecnorm(y)/vecnorm(x)))
+            a3 = acos(round(vecdot(z,-y)/vecnorm(z)/vecnorm(y)))
             return (a1 + a2 + a3 - pi)*sign(vecdot(a,cross(b,c)))
         end
     end
+end
 
+
+function montecarlo(Temperature)
+    #Tmin = 0.0001
+    #Tchange = 0.05
+    #Tmax = 0.2
+    mcs = 40000
+    M = 8
+    N = 8
+
+    norm=(1.0/float(M*N))
+
+    #Temperature = Tmin:Tchange:Tmax
+    J_space = [0]
+    Jskyrm_vec = zeros(length(Temperature),length(J_space))
+    Jskyrm_vec_err = zeros(length(Temperature),length(J_space))
+    skyrm_vec = zeros(length(Temperature),2)
+    skyrm_jack = zeros(mcs,1)
+
+    Jcount = 1
+    for J in J_space
+        lat = initialise(M,N)
+        count = 1
+        for T in Temperature
+            transient_results(lat,3000,J,T)
+            E = total_energy(J,lat)
+            for i in 1:mcs
+                for j in 1:M*N
+                    x = rand(1:M)
+                    y = rand(1:N)
+                    E_0 = energy_pos(x,y,J,lat)
+                    if(test_flip(x,y,J,lat,T))
+                        E = E + energy_pos(x,y,J,lat) - E_0
+                    end
+                end
+                skyrm_num = skyrmion_number(lat)
+                skyrm_jack[i] = (skyrm_num).^2
+            end
+            skyrm_jack = skyrm_jack*norm*N*N
+            skyrm_vec[count,1], skyrm_vec[count,2] = jackknife(skyrm_jack)
+            count = count + 1
+            println(T)
+        end
+    Jskyrm_vec[:,Jcount] = skyrm_vec[:,1]
+    Jskyrm_vec_err[:,Jcount] = skyrm_vec[:,2]
+    Jcount = Jcount + 1
+    end
+
+    return Jskyrm_vec,Jskyrm_vec_err
 end
