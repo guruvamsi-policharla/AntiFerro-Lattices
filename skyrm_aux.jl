@@ -184,19 +184,27 @@ function montecarlo(Temperature)
     #Tmin = 0.0001
     #Tchange = 0.05
     #Tmax = 0.2
-    mcs = 40000
-    M = 8
-    N = 8
+    mcs = 20000
+    M = 4
+    N = 4
 
     norm=(1.0/float(M*N))
 
     #Temperature = Tmin:Tchange:Tmax
     J_space = [0]
+
+
+    M_vec = zeros(length(Temperature),2)
+    JM_vec = zeros(length(Temperature),length(J_space))
+    JM_vec_err = zeros(length(Temperature),length(J_space))
+    M_jack = zeros(mcs,1)
+
     Jskyrm_vec = zeros(length(Temperature),length(J_space))
     Jskyrm_vec_err = zeros(length(Temperature),length(J_space))
     skyrm_vec = zeros(length(Temperature),2)
     skyrm_jack = zeros(mcs,1)
 
+    autocor_vec = 0
     Jcount = 1
     for J in J_space
         lat = initialise(M,N)
@@ -215,16 +223,30 @@ function montecarlo(Temperature)
                 end
                 skyrm_num = skyrmion_number(lat)
                 skyrm_jack[i] = (skyrm_num).^2
+
+                Mag = total_mag(lat)
+                M_jack[i] = vecnorm(Mag)
             end
-            skyrm_jack = skyrm_jack*norm*N*N
+            skyrm_jack = skyrm_jack*norm
             skyrm_vec[count,1], skyrm_vec[count,2] = jackknife(skyrm_jack)
+
+            M_jack = M_jack*norm
+            M_vec[count,1], M_vec[count,2] = jackknife(M_jack)
+
             count = count + 1
             println(T)
+            #if T == Tmin
+            #    autocor_vec = autocor(skyrm_jack)
+            #end
         end
     Jskyrm_vec[:,Jcount] = skyrm_vec[:,1]
     Jskyrm_vec_err[:,Jcount] = skyrm_vec[:,2]
+
+    JM_vec[:,Jcount] = M_vec[:,1]
+    JM_vec_err[:,Jcount] = M_vec[:,2]
+
     Jcount = Jcount + 1
     end
 
-    return Jskyrm_vec,Jskyrm_vec_err
+    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err
 end
