@@ -180,19 +180,16 @@ function spher_tri_area(a,b,c)
 end
 
 
-function montecarlo(Temperature)
+function montecarlo(Temperature,N,J_space)
     #Tmin = 0.0001
     #Tchange = 0.05
     #Tmax = 0.2
-    mcs = 20000
-    M = 4
-    N = 4
+    mcs = 40000
+    M = N
 
     norm=(1.0/float(M*N))
 
     #Temperature = Tmin:Tchange:Tmax
-    J_space = [0]
-
 
     M_vec = zeros(length(Temperature),2)
     JM_vec = zeros(length(Temperature),length(J_space))
