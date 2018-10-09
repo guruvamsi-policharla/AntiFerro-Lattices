@@ -1,6 +1,6 @@
 function sample_gauss(v)
     #Input is the central vector around which we flip
-    var = 0.1
+    var = 0.2
     v_new = [rand(Normal(v[1],var)),rand(Normal(v[2],var)),rand(Normal(v[3],var))]
     v_new = v_new/sqrt(vecdot(v_new,v_new))
     return convert(Vector,v_new)
@@ -64,8 +64,8 @@ end
 
 function test_flip(x, y, J, lat, T)
 """ Checks whether energy allows for a flip or not """
-    a = sample_uni()
-    #a = sample_gauss(lat[x,y])
+    #a = sample_uni()
+    a = sample_gauss(lat[x,y])
     de = -energy_pos(x,y,J,lat) + energy_pos(x,y,J,lat,a);
 
     if(de<0)
@@ -143,6 +143,39 @@ function four_trans(lat)
 return ft
 end
 
+function four_trans_skyrm(lat)
+    M = size(lat,1)
+    N = size(lat,2)
+    q = zeros(M,N)
+    for i in 1:M
+       for j in 1:N
+           a = lat[i,j]#centre
+           b = lat[i,mod(j,N)+1]#right
+           c = lat[mod(i,M)+1,mod(j,N)+1]#rightdown
+           d = lat[mod(i,M)+1,j]#down
+           q[i,j] = (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
+       end
+    end
+    ft = abs.(fft(q))
+return ft
+end
+
+function trans_skyrm(lat)
+    M = size(lat,1)
+    N = size(lat,2)
+    q = zeros(M,N)
+    for i in 1:M
+       for j in 1:N
+           a = lat[i,j]#centre
+           b = lat[i,mod(j,N)+1]#right
+           c = lat[mod(i,M)+1,mod(j,N)+1]#rightdown
+           d = lat[mod(i,M)+1,j]#down
+           q[i,j] = (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
+       end
+    end
+return q
+end
+
 function skyrmion_number(lat)
     M = size(lat,1)
     N = size(lat,2)
@@ -180,6 +213,68 @@ function spher_tri_area(a,b,c)
 end
 
 
+function plotlat(lat,index1=0,index2=0)
+    #fig = figure()
+    w, h = figaspect(0.4)
+    fig = figure(figsize=(w,h))
+    M = size(lat,1)
+    N = size(lat,2)
+    X = repmat(1:M,M)
+    Y = []
+    for i in 1:M
+        Y = vcat(Y,repmat([i],M))
+    end
+
+    Z = zeros(size(lat,2)^2)
+    U = zeros(M*N)
+    V = zeros(M*N)
+    W = zeros(M*N)
+    col = zeros(M*N)
+    for i in 1:M
+        for j in 1:N
+            U[(i-1)*M+j] = lat[i,j][1]
+            V[(i-1)*M+j] = lat[i,j][2]
+            W[(i-1)*M+j] = lat[i,j][3]
+            if(lat[i,j][3]>0)
+                col[(i-1)*M+j] = 'g'
+            else
+                col[(i-1)*M+j] = 'b'
+            end
+        end
+    end
+
+    q = zeros(M,N)
+    for i in 1:M
+       for j in 1:N
+           a = lat[i,j]#centre
+           b = lat[i,mod(j,N)+1]#right
+           c = lat[mod(i,M)+1,mod(j,N)+1]#rightdown
+           d = lat[mod(i,M)+1,j]#down
+           q[i,j] = (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
+       end
+    end
+
+    #contourf(X, Y, q)
+    #colorbar()
+    #subplot(121,projection="3d")
+    #quiver(X,Y,Z,U,V,W)
+    #zlim(-1,1)
+    #title("Skyrmion Number = "*string.(skyrmion_number(lat)))
+    subplot(121)
+    contourf(q,vmin=-1,vmax=1)
+    colorbar()
+    title("Skyrmion Number = "* string.(skyrmion_number(lat)))
+    subplot(122)
+    quiver(X,Y,U,V,col)
+    title("Skyrmion Number = "* string.(skyrmion_number(lat)))
+    savefig("/home/vamsi/Github/quiveranim/" * string((index1-1)*M*M+index2) * ".png")
+    close()
+end
+#if((a!=0) & (b!=0))
+#    print(a,b)
+    #
+#end
+
 function montecarlo(Temperature,N,J_space)
     #Tmin = 0.0001
     #Tchange = 0.05
@@ -188,7 +283,7 @@ function montecarlo(Temperature,N,J_space)
     M = N
 
     norm=(1.0/float(M*N))
-
+    qFT = zeros(M,N,length(J_space))
     #Temperature = Tmin:Tchange:Tmax
 
     M_vec = zeros(length(Temperature),2)
@@ -223,6 +318,9 @@ function montecarlo(Temperature,N,J_space)
 
                 Mag = total_mag(lat)
                 M_jack[i] = vecnorm(Mag)
+
+                qFT[:,:,Jcount] = qFT[:,:,Jcount] + four_trans_skyrm(lat)
+
             end
             skyrm_jack = skyrm_jack*norm
             skyrm_vec[count,1], skyrm_vec[count,2] = jackknife(skyrm_jack)
@@ -245,5 +343,5 @@ function montecarlo(Temperature,N,J_space)
     Jcount = Jcount + 1
     end
 
-    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err
+    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,qFT
 end
