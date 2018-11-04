@@ -10,11 +10,18 @@ using JLD2
 #J_space = 1:0.5:2.5
 
 #f=jldopen("./data/Full Fledged/data16x16full.jld2","r")
-f=jldopen("./data/Full Fledged/data16x16full.jld2","r")
+
+#f=jldopen("./data/fullres/data8x8fullresbind_1.jld2","r")
+f=jldopen("./data/fullres/data4x4fullresbind1.jld2","r")
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
 skyrm_err_temp = f["skyrm_err_temp"].s
 mag_err_temp = f["mag_err_temp"].s
+magbind_temp = f["magbind_temp"].s
+magbind_err_temp = f["magbind_err_temp"].s
+skyrmbind_temp = f["skyrmbind_temp"].s
+skyrmbind_err_temp = f["skyrmbind_err_temp"].s
+
 N = f["N"]
 Temperature = f["Temperature"]
 J_space = f["J_space"]
@@ -32,24 +39,43 @@ mag = Array{Float64,4}(undef,length(Temperature),length(J_space),4,3)
 skyrm_err = Array{Float64,4}(undef,length(Temperature),length(J_space),4,3)
 mag_err = Array{Float64,4}(undef,length(Temperature),length(J_space),4,3)
 
+magbind = Array{Float64,3}(undef,length(Temperature),length(J_space),4)
+skyrmbind = Array{Float64,3}(undef,length(Temperature),length(J_space),4)
+magbind_err = Array{Float64,3}(undef,length(Temperature),length(J_space),4)
+skyrmbind_err = Array{Float64,3}(undef,length(Temperature),length(J_space),4)
+
 mag[:,:,:,:] = reshape(mean(mag_temp,dims=5),(size(mag_temp,1),size(mag_temp,2),4,3))
-mag_err[:,:,:,:] = reshape(sqrt.(sum(mag_err_temp.^2,dims=5))./size(mag_err_temp,5),(size(mag_err_temp,1),size(mag_err_temp,2),4,3))
+mag_err[:,:,:,:] = reshape(sqrt.(sum(mag_err_temp.^2,dims=5)./size(mag_err_temp,5)),(size(mag_err_temp,1),size(mag_err_temp,2),4,3))
 skyrm[:,:,:,:] = reshape(mean(skyrm_temp,dims=5),(size(skyrm_temp,1),size(skyrm_temp,2),4,3))
-skyrm_err[:,:,:,:] = reshape(sqrt.(sum(skyrm_err_temp.^2,dims=5))./size(skyrm_err_temp,5),(size(skyrm_err_temp,1),size(skyrm_err_temp,2),4,3))
+skyrm_err[:,:,:,:] = reshape(sqrt.(sum(skyrm_err_temp.^2,dims=5)./size(skyrm_err_temp,5)),(size(skyrm_err_temp,1),size(skyrm_err_temp,2),4,3))
+
+magbind[:,:,:] = reshape(mean(magbind_temp,dims=4),(size(magbind_temp,1),size(magbind_temp,2),4))
+magbind_err[:,:,:] = reshape(sqrt.(sum(magbind_err_temp.^2,dims=4)./size(magbind_err_temp,4)),(size(magbind_err_temp,1),size(magbind_err_temp,2),4))
+
+skyrmbind[:,:,:] = reshape(mean(skyrmbind_temp,dims=4),(size(skyrmbind_temp,1),size(skyrmbind_temp,2),4))
+skyrmbind_err[:,:,:] = reshape(sqrt.(sum(skyrmbind_err_temp.^2,dims=4)./size(skyrmbind_err_temp,4)),(size(skyrmbind_err_temp,1),size(skyrmbind_err_temp,2),4))
+
+skyrmbindinv = inv.(skyrmbind)
+skyrmbindinv_err = skyrmbindinv.^2 .* skyrmbind_err
 
 
+#=
 for jj in 1:3
 figure()
     for ii in 1:4
         subplot(2,2,ii)
         for i in jstart:jend #Jspace
-            errorbar(Temperature,mag[:,i,ii,jj],yerr = mag_err[:,i,ii,jj],fmt="o",linestyle="-")
+            if ii == 2
+                errorbar(Temperature,(mag[:,i,ii,jj]+mag[:,i,ii+1,jj])/2,yerr = (mag_err[:,i,ii,jj]+mag_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-")
+            else
+                errorbar(Temperature,mag[:,i,ii,jj],yerr = mag_err[:,i,ii,jj],fmt="o",linestyle="-")
+            end
             title(" Curve "*string(N)*"x"*string(N))
         end
         if ii == 1
             title("Magnetisation 00 - "*string(N)*"x"*string(N))
         elseif ii == 2
-            title("Magnetisation 0pi - "*string(N)*"x"*string(N))
+            title("Magnetisation (0pi+pi0)/2 - "*string(N)*"x"*string(N))
             legend("J1/J2 = ".*string.(J_space[jstart:jend]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
             title("Magnetisation pi0 - "*string(N)*"x"*string(N))
@@ -78,12 +104,16 @@ for jj in 1:3
         subplot(2,2,ii)
         for i in jstart:jend
             #errorbar(Temperature,mean(data["mag"*string(i)],2),mean(data["mag_err"*string(i)],2))
-            errorbar(Temperature,skyrm[:,i,ii,jj],yerr = skyrm_err[:,i,ii,jj],fmt="o",linestyle="-")
+            if ii == 2
+                errorbar(Temperature,(skyrm[:,i,ii,jj]+skyrm[:,i,ii+1,jj])/2,yerr = (skyrm_err[:,i,ii,jj]+skyrm_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-")
+            else
+                errorbar(Temperature,skyrm[:,i,ii,jj],yerr = skyrm_err[:,i,ii,jj],fmt="o",linestyle="-")
+            end
         end
         if ii == 1
             title("Skyrmion 00 - "*string(N)*"x"*string(N))
         elseif ii == 2
-            title("Skyrmion 0pi - "*string(N)*"x"*string(N))
+            title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
             legend("J1/J2 = ".*string.(J_space[jstart:jend]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
             title("Skyrmion pi0 - "*string(N)*"x"*string(N))
@@ -110,14 +140,18 @@ for jj in 1:3
     figure()
     for ii in 1:4
         subplot(2,2,ii)
-        for i in 1:2:length(Temperature)
-            errorbar(J_space,skyrm[i,:,ii,jj],skyrm_err[i,:,ii,jj],fmt="o",linestyle="-")
+        for i in 1:1:length(Temperature)
+            if ii == 2
+                errorbar(J_space,(skyrm[i,:,ii,jj]+skyrm[i,:,ii+1,jj])/2,yerr = (skyrm_err[i,:,ii,jj]+skyrm_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-")
+            else
+                errorbar(J_space,skyrm[i,:,ii,jj],skyrm_err[i,:,ii,jj],fmt="o",linestyle="-")
+            end
         end
         if ii == 1
             title("Skyrmion 00 - "*string(N)*"x"*string(N))
         elseif ii == 2
-            title("Skyrmion 0pi - "*string(N)*"x"*string(N))
-            legend("T = ".*string.(Temperature[1:2:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+            title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
             title("Skyrmion pi0 - "*string(N)*"x"*string(N))
         elseif ii == 4
@@ -138,24 +172,65 @@ for jj in 1:3
         grid("on")
     end
 end
+=#
 
-#jstart = 5
-#jend = 22
+for jj in 1:3
+    figure()
+    for ii in 1:4
+        subplot(2,2,ii)
+        for i in 1:1:length(Temperature)
+            if ii == 2
+                errorbar(J_space,(mag[i,:,ii,jj]+mag[i,:,ii+1,jj])/2,yerr = (mag_err[i,:,ii,jj]+mag_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-")
+            else
+                errorbar(J_space,mag[i,:,ii,jj],mag_err[i,:,ii,jj],fmt="o",linestyle="-")
+            end
+        end
+        if ii == 1
+            title("Magnetisation 00 - "*string(N)*"x"*string(N))
+        elseif ii == 2
+            title("Magnetisation (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+        elseif ii == 3
+            title("Magnetisation pi0 - "*string(N)*"x"*string(N))
+        elseif ii == 4
+            title("Magnetisation pipi - "*string(N)*"x"*string(N))
+        end
+        if ii>2
+            xlabel("J1/J2")
+        end
+        if mod(ii,2)==1
+            if jj == 1
+                ylabel("abs(mag)")
+            elseif jj == 2
+                ylabel("mag.^2")
+            elseif jj == 3
+                ylabel("mag.^4")
+            end
+        end
+        axvline(x=0.5,linestyle="-.",color="r")
+        grid("on")
+    end
+end
+
 
 jstart = 1
 jend = length(J_space)
 
+#=
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        yvec = skyrm[i,:,ii,3]./((skyrm[i,:,ii,2]).^2)
-        errorbar(J_space[jstart:jend],yvec[jstart:jend],zeros(length(yvec[jstart:jend])),fmt="o",linestyle="-")
+        if ii == 2
+            errorbar(J_space[jstart:jend],(skyrmbind[i,jstart:jend,ii]+skyrmbind[i,jstart:jend,ii+1])/2,sqrt.(skyrmbind_err[i,jstart:jend,ii].^2+skyrmbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
+        else
+            errorbar(J_space[jstart:jend],skyrmbind[i,jstart:jend,ii],skyrmbind_err[i,jstart:jend,ii],fmt="o",linestyle="-")
+        end
     end
     if ii == 1
         title("Skyrmion 00 - "*string(N)*"x"*string(N))
     elseif ii == 2
-        title("Skyrmion 0pi - "*string(N)*"x"*string(N))
+        title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
         legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
     elseif ii == 3
         title("Skyrmion pi0 - "*string(N)*"x"*string(N))
@@ -170,19 +245,22 @@ for ii in 1:4
     end
     grid("on")
 end
-
-
+=#
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        yvec = skyrm[i,:,ii,2]./((skyrm[i,:,ii,1]).^2)
-        errorbar(J_space,yvec,zeros(length(yvec)),fmt="o",linestyle="-")
+        if ii == 2
+            errorbar(J_space[jstart:jend],(skyrmbindinv[i,jstart:jend,ii]+skyrmbindinv[i,jstart:jend,ii+1])/2,sqrt.(skyrmbindinv_err[i,jstart:jend,ii].^2+skyrmbindinv_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
+        else
+            errorbar(J_space[jstart:jend],skyrmbindinv[i,jstart:jend,ii],skyrmbindinv_err[i,jstart:jend,ii],fmt="o",linestyle="-")
+        end
+
     end
     if ii == 1
         title("Skyrmion 00 - "*string(N)*"x"*string(N))
     elseif ii == 2
-        title("Skyrmion 0pi - "*string(N)*"x"*string(N))
+        title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
         legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
     elseif ii == 3
         title("Skyrmion pi0 - "*string(N)*"x"*string(N))
@@ -193,7 +271,39 @@ for ii in 1:4
         xlabel("J1/J2")
     end
     if mod(ii,2)==1
-            ylabel("(skyrm)^2/(abs(skyrm))^2")
+            ylabel("(skyrm^2)^2/(skyrm)^4")
     end
+    axvline(x=0.5,linestyle="-.",color="r")
+    grid("on")
+end
+
+figure()
+for ii in 1:4
+    subplot(2,2,ii)
+    for i in 1:1:length(Temperature)
+        if ii == 2
+            errorbar(J_space[jstart:jend],(magbind[i,jstart:jend,ii]+magbind[i,jstart:jend,ii+1])/2,sqrt.(magbind_err[i,jstart:jend,ii].^2+magbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
+        else
+            errorbar(J_space[jstart:jend],magbind[i,jstart:jend,ii],magbind_err[i,jstart:jend,ii],fmt="o",linestyle="-")
+        end
+
+    end
+    if ii == 1
+        title("Magnetisation Binder 00 - "*string(N)*"x"*string(N))
+    elseif ii == 2
+        title("Magnetisation Binder (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+        legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+    elseif ii == 3
+        title("Magnetisation Binder pi0 - "*string(N)*"x"*string(N))
+    elseif ii == 4
+        title("Magnetisation Binder pipi - "*string(N)*"x"*string(N))
+    end
+    if ii>2
+        xlabel("J1/J2")
+    end
+    if mod(ii,2)==1
+            ylabel("(mag)^4/(mag^2)^2")
+    end
+    axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end

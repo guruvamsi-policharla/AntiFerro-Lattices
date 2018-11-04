@@ -112,14 +112,25 @@ function exact_heisen_energy(T)
     return (exp(1/T) * (-1 + T) * T - exp(-1/T) * T * (1 + T))/(2*T*sinh(1/T))
 end
 
-function jackknife(vec)
-    s = sum(vec)
-    n = length(vec)
-    vec_jack = (s .- vec)/(n-1)
-    jack_avg = sum(vec_jack) / n
+function jackknife(v)
+    s = sum(v)
+    n = length(v)
+    vec_jack = (s .- v)/(n-1)
+    jack_avg = mean(vec_jack)
+    jack_err = sqrt((mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
+    return jack_avg,jack_err
+end
 
-    jack_err = sqrt(sum((vec_jack.-jack_avg).^2) * (n-1)/n)
-    #jack_err = sqrt((n-1)*(jack_err - jack_avg.^2))
+function bindjack(vec4,vec2)
+    n = length(vec4)
+    s4 = sum(vec4)
+    s2 = sum(vec2)
+    vec_jack = ((s4 .- vec4)./(s2 .- vec2).^2) .* (n-1)
+
+    jack_avg = mean(vec_jack)
+    jack_err = sqrt(abs(mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
+
+    #println("Finished calculating Binder")
     return jack_avg,jack_err
 end
 
@@ -271,9 +282,31 @@ function plotlat(lat,index1=0,index2=0)
     close()
 end
 
+function lat_transform(lat,latindex)
+    N = size(lat,1)
+    if latindex == 2
+        for ii in 1:N
+            for jj in 1:N
+                lat[ii,jj] = (-1)^(jj).*lat[ii,jj]
+            end
+        end
+    elseif latindex == 3
+        for ii in 1:N
+            for jj in 1:N
+                lat[ii,jj] = (-1)^(ii).*lat[ii,jj]
+            end
+        end
+    elseif latindex == 4
+        for ii in 1:N
+            for jj in 1:N
+                lat[ii,jj] = (-1)^(ii+jj).*lat[ii,jj]
+            end
+        end
+    end
+end
 
 function montecarlo(Temperature,N,J_space)
-    mcs = 15000
+    mcs = 50000
     M = N
 
     normalisation=(1.0/float(M*N))
@@ -283,36 +316,25 @@ function montecarlo(Temperature,N,J_space)
     JM_vec_err = zeros(length(Temperature),length(J_space),4,3)
     Jskyrm_vec = zeros(length(Temperature),length(J_space),4,3)
     Jskyrm_vec_err = zeros(length(Temperature),length(J_space),4,3)
+    Jmagbind_vec = zeros(length(Temperature),length(J_space),4)
+    Jskyrmbind_vec = zeros(length(Temperature),length(J_space),4)
+    Jmagbind_vec_err = zeros(length(Temperature),length(J_space),4)
+    Jskyrmbind_vec_err = zeros(length(Temperature),length(J_space),4)
 #################################################################
-    M_vec = zeros(length(Temperature),2,3)
-    M_jack = zeros(mcs,3)
+    M_vec = zeros(length(Temperature),2,3,4)
+    M_jack = zeros(mcs,3,4)
 
-    skyrm_vec = zeros(length(Temperature),2,3)
-    skyrm_jack = zeros(mcs,3)
-################################################################
-    M_vec0pi = zeros(length(Temperature),2,3)
-    M_jack0pi = zeros(mcs,3)
+    skyrm_vec = zeros(length(Temperature),2,3,4)
+    skyrm_jack = zeros(mcs,3,4)
 
-    skyrm_vec0pi = zeros(length(Temperature),2,3)
-    skyrm_jack0pi = zeros(mcs,3)
-################################################################
-    M_vecpi0 = zeros(length(Temperature),2,3)
-    M_jackpi0 = zeros(mcs,3)
+    magbind_vec = zeros(length(Temperature),2,4)
+    skyrmbind_vec = zeros(length(Temperature),2,4)
 
-    skyrm_vecpi0 = zeros(length(Temperature),2,3)
-    skyrm_jackpi0 = zeros(mcs,3)
-###################################################################
-    M_vecpipi = zeros(length(Temperature),2,3)
-    M_jackpipi = zeros(mcs,3)
-
-    skyrm_vecpipi = zeros(length(Temperature),2,3)
-    skyrm_jackpipi = zeros(mcs,3)
-###################################################################
     #autocor_vec = 0
     Jcount = 1
     for J in J_space
         lat = initialise(M,N)
-        count = 1
+        Tcount = 1
         for T in Temperature
             transient_results(lat,3000,J,T)
             E = total_energy(J,lat)
@@ -325,132 +347,73 @@ function montecarlo(Temperature,N,J_space)
                         E = E + energy_pos(x,y,J,lat) - E_0
                     end
                 end
-                #####################
-                skyrm_num = skyrmion_number(lat)
-                skyrm_jack[i,1] = abs(skyrm_num*normalisation)
-                skyrm_jack[i,2] = (skyrm_num*normalisation).^2
-                skyrm_jack[i,3] = (skyrm_num*normalisation).^4
 
-                Mag = total_mag(lat)
-                M_jack[i,1] = (norm(Mag)*normalisation)
-                M_jack[i,2] = (norm(Mag)*normalisation).^2
-                M_jack[i,3] = (norm(Mag)*normalisation).^4
-                #####################
-                fac0pi = Array{Vector{Float64},2}(undef, N, N);
-                for ii in 1:N
-                    for jj in 1:N
-                        fac0pi[ii,jj] = (-1)^(jj).*lat[ii,jj]
+                for latindex in 1:4
+                    if latindex == 1
+                        skyrm_num = skyrmion_number(lat)
+                        Mag = total_mag(lat)
+                    elseif latindex == 2
+                        lat_transform(lat,latindex)
+                        skyrm_num = skyrmion_number(lat)
+                        Mag = total_mag(lat)
+                        lat_transform(lat,latindex)
+                    elseif latindex == 3
+                        lat_transform(lat,latindex)
+                        skyrm_num = skyrmion_number(lat)
+                        Mag = total_mag(lat)
+                        lat_transform(lat,latindex)
+                    elseif latindex == 4
+                        lat_transform(lat,latindex)
+                        skyrm_num = skyrmion_number(lat)
+                        Mag = total_mag(lat)
+                        lat_transform(lat,latindex)
                     end
+
+                    skyrm_jack[i,1,latindex] = abs(skyrm_num*normalisation)
+                    skyrm_jack[i,2,latindex] = (skyrm_num*normalisation).^2
+                    skyrm_jack[i,3,latindex] = (skyrm_num*normalisation).^4
+
+                    M_jack[i,1,latindex] = (norm(Mag)*normalisation)
+                    M_jack[i,2,latindex] = (norm(Mag)*normalisation).^2
+                    M_jack[i,3,latindex] = (norm(Mag)*normalisation).^4
+
                 end
-                skyrm_num0pi = skyrmion_number(fac0pi)
-
-                skyrm_jack0pi[i,1] = abs(skyrm_num0pi*normalisation)
-                skyrm_jack0pi[i,2] = (skyrm_num0pi*normalisation).^2
-                skyrm_jack0pi[i,3] = (skyrm_num0pi*normalisation).^4
-
-                Mag0pi = total_mag(fac0pi)
-
-                M_jack0pi[i,1] = (norm(Mag0pi)*normalisation)
-                M_jack0pi[i,2] = (norm(Mag0pi)*normalisation).^2
-                M_jack0pi[i,3] = (norm(Mag0pi)*normalisation).^4
-                #####################
-                facpi0 = Array{Vector{Float64},2}(undef, N, N);
-                for ii in 1:N
-                    for jj in 1:N
-                        facpi0[ii,jj] = (-1)^(ii).*lat[ii,jj]
-                    end
-                end
-                skyrm_numpi0 = skyrmion_number(facpi0)
-
-                skyrm_jackpi0[i,1] = abs(skyrm_numpi0*normalisation)
-                skyrm_jackpi0[i,2] = (skyrm_numpi0*normalisation).^2
-                skyrm_jackpi0[i,3] = (skyrm_numpi0*normalisation).^4
-
-                Magpi0 = total_mag(facpi0)
-
-                M_jackpi0[i,1] = (norm(Magpi0)*normalisation)
-                M_jackpi0[i,2] = (norm(Magpi0)*normalisation).^2
-                M_jackpi0[i,3] = (norm(Magpi0)*normalisation).^4
-                ####################
-                facpipi = Array{Vector{Float64},2}(undef, N, N);
-                for ii in 1:N
-                    for jj in 1:N
-                        facpipi[ii,jj] = (-1)^(jj+ii).*lat[ii,jj]
-                    end
-                end
-                skyrm_numpipi = skyrmion_number(facpipi)
-
-                skyrm_jackpipi[i,1] = abs(skyrm_numpipi*normalisation)
-                skyrm_jackpipi[i,2] = (skyrm_numpipi*normalisation).^2
-                skyrm_jackpipi[i,3] = (skyrm_numpipi*normalisation).^4
-
-                Magpipi = total_mag(facpipi)
-
-                M_jackpipi[i,1] = (norm(Magpipi)*normalisation)
-                M_jackpipi[i,2] = (norm(Magpipi)*normalisation).^2
-                M_jackpipi[i,3] = (norm(Magpipi)*normalisation).^4
-                ####################
                 #qFT[:,:,Jcount] = qFT[:,:,Jcount] + four_trans_skyrm(lat)
-
             end
 
-            skyrm_jack = skyrm_jack
-            M_jack = M_jack
-            skyrm_jack0pi = skyrm_jack0pi
-            M_jack0pi = M_jack0pi
-            skyrm_jackpi0 = skyrm_jackpi0
-            M_jackpi0 = M_jackpi0
-            skyrm_jackpipi = skyrm_jackpipi
-            M_jackpipi = M_jackpipi
+            for jj in 1:4
+                for ii in 1:3
+                    skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
+                    M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                end
+                magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
+                skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])
+	    end
+            Tcount = Tcount + 1
 
-            for ii in 1:3
-                skyrm_vec[count,1,ii], skyrm_vec[count,2,ii] = jackknife(skyrm_jack[:,ii])
-                M_vec[count,1,ii], M_vec[count,2,ii] = jackknife(M_jack[:,ii])
-
-                skyrm_vec0pi[count,1,ii], skyrm_vec0pi[count,2,ii] = jackknife(skyrm_jack0pi[:,ii])
-                M_vec0pi[count,1,ii], M_vec0pi[count,2,ii] = jackknife(M_jack0pi[:,ii])
-
-                skyrm_vecpi0[count,1,ii], skyrm_vecpi0[count,2,ii] = jackknife(skyrm_jackpi0[:,ii])
-                M_vecpi0[count,1,ii], M_vecpi0[count,2,ii] = jackknife(M_jackpi0[:,ii])
-
-                skyrm_vecpipi[count,1,ii], skyrm_vecpipi[count,2,ii] = jackknife(skyrm_jackpipi[:,ii])
-                M_vecpipi[count,1,ii], M_vecpipi[count,2,ii] = jackknife(M_jackpipi[:,ii])
-            end
-
-            count = count + 1
-            println(T)
             #if T == Tmin
             #    autocor_vec = autocor(skyrm_jack)
             #end
         end
-    for ii in 1:3
-        Jskyrm_vec[:,Jcount,1,ii] = skyrm_vec[:,1,ii]
-        Jskyrm_vec_err[:,Jcount,1,ii] = skyrm_vec[:,2,ii]
 
-        JM_vec[:,Jcount,1,ii] = M_vec[:,1,ii]
-        JM_vec_err[:,Jcount,1,ii] = M_vec[:,2,ii]
-        ###########################################
-        Jskyrm_vec[:,Jcount,2,ii] = skyrm_vec0pi[:,1,ii]
-        Jskyrm_vec_err[:,Jcount,2,ii] = skyrm_vec0pi[:,2,ii]
+        for jj in 1:4
+            for ii in 1:3
+                Jskyrm_vec[:,Jcount,jj,ii] = skyrm_vec[:,1,ii,jj]
+                Jskyrm_vec_err[:,Jcount,jj,ii] = skyrm_vec[:,2,ii,jj]
 
-        JM_vec[:,Jcount,2,ii] = M_vec0pi[:,1,ii]
-        JM_vec_err[:,Jcount,2,ii] = M_vec0pi[:,2,ii]
-        ###########################################
-        Jskyrm_vec[:,Jcount,3,ii] = skyrm_vecpi0[:,1,ii]
-        Jskyrm_vec_err[:,Jcount,3,ii] = skyrm_vecpi0[:,2,ii]
+                JM_vec[:,Jcount,jj,ii] = M_vec[:,1,ii,jj]
+                JM_vec_err[:,Jcount,jj,ii] = M_vec[:,2,ii,jj]
+            end
+            Jmagbind_vec[:,Jcount,jj] = magbind_vec[:,1,jj]
+            Jmagbind_vec_err[:,Jcount,jj] = magbind_vec[:,2,jj]
 
-        JM_vec[:,Jcount,3,ii] = M_vecpi0[:,1,ii]
-        JM_vec_err[:,Jcount,3,ii] = M_vecpi0[:,2,ii]
-        ##########################################
-        Jskyrm_vec[:,Jcount,4,ii] = skyrm_vecpipi[:,1,ii]
-        Jskyrm_vec_err[:,Jcount,4,ii] = skyrm_vecpipi[:,2,ii]
+            Jskyrmbind_vec[:,Jcount,jj] = skyrmbind_vec[:,1,jj]
+            Jskyrmbind_vec_err[:,Jcount,jj] = skyrmbind_vec[:,2,jj]
+        end
 
-        JM_vec[:,Jcount,4,ii] = M_vecpipi[:,1,ii]
-        JM_vec_err[:,Jcount,4,ii] = M_vecpipi[:,2,ii]
-        ##########################################
-    end
-    Jcount = Jcount + 1
+        Jcount = Jcount + 1
+        println("J_space:",J)
     end
 
-    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,qFT
+    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,Jmagbind_vec,Jmagbind_vec_err,Jskyrmbind_vec,Jskyrmbind_vec_err,qFT
 end
