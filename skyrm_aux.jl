@@ -125,7 +125,7 @@ function bindjack(vec4,vec2)
     n = length(vec4)
     s4 = sum(vec4)
     s2 = sum(vec2)
-    vec_jack = ((s4 .- vec4)./(s2 .- vec2).^2) .* (n-1)
+    vec_jack = (((s2 .- vec2).^2) ./(s4 .- vec4)) ./ (n-1)
 
     jack_avg = mean(vec_jack)
     jack_err = sqrt(abs(mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
@@ -383,11 +383,21 @@ function montecarlo(Temperature,N,J_space)
 
             for jj in 1:4
                 for ii in 1:3
-                    skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
-                    M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                    if jj == 2
+                        skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife((skyrm_jack[:,ii,jj]+skyrm_jack[:,ii,jj+1])./2)
+                        M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife((M_jack[:,ii,jj]+M_jack[:,ii,jj+1])./2)
+                    else
+                        skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
+                        M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                    end
                 end
-                magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
-                skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])
+                if jj == 2
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack((M_jack[:,3,jj]+M_jack[:,3,jj+1])./2,(M_jack[:,2,jj]+M_jack[:,2,jj+1])./2)
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack((skyrm_jack[:,3,jj]+skyrm_jack[:,3,jj+1])./2,(skyrm_jack[:,2,jj]+skyrm_jack[:,2,jj+1])./2)
+                else
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])
+                end
 	    end
             Tcount = Tcount + 1
 

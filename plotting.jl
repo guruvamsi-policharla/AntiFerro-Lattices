@@ -1,6 +1,20 @@
 using PyPlot
 using Statistics
 using JLD2
+using PlotUtils
+using Images
+palsize = 30
+cm = cgrad(:plasma);
+space = 1
+cm_temp = [cm[i] for i in 1:1:200]
+palette = Array{Float64,2}(undef,palsize,3)
+for i in 1:palsize
+    palette[i,:] = [red(cm_temp[i]),green(cm_temp[i]),blue(cm_temp[i])]
+end
+
+nanmean(x) = mean(filter(!isnan,x))
+nanmean(x,y) = mapslices(nanmean,x,y)
+
 #Tmin = 0.1
 #Tchange = 0.1
 #Tmax = 3 #Change temp IN BOTH LOCATIONS!!!
@@ -12,7 +26,7 @@ using JLD2
 #f=jldopen("./data/Full Fledged/data16x16full.jld2","r")
 
 #f=jldopen("./data/fullres/data8x8fullresbind_1.jld2","r")
-f=jldopen("./data/fullres/data4x4fullresbind1.jld2","r")
+f=jldopen("./data/fullres/Recent/data8x8fullresbind1.jld2","r")
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
 skyrm_err_temp = f["skyrm_err_temp"].s
@@ -52,63 +66,69 @@ skyrm_err[:,:,:,:] = reshape(sqrt.(sum(skyrm_err_temp.^2,dims=5)./size(skyrm_err
 magbind[:,:,:] = reshape(mean(magbind_temp,dims=4),(size(magbind_temp,1),size(magbind_temp,2),4))
 magbind_err[:,:,:] = reshape(sqrt.(sum(magbind_err_temp.^2,dims=4)./size(magbind_err_temp,4)),(size(magbind_err_temp,1),size(magbind_err_temp,2),4))
 
-skyrmbind[:,:,:] = reshape(mean(skyrmbind_temp,dims=4),(size(skyrmbind_temp,1),size(skyrmbind_temp,2),4))
-skyrmbind_err[:,:,:] = reshape(sqrt.(sum(skyrmbind_err_temp.^2,dims=4)./size(skyrmbind_err_temp,4)),(size(skyrmbind_err_temp,1),size(skyrmbind_err_temp,2),4))
+#skyrmbind[:,:,:] = reshape(mean(skyrmbind_temp,dims=4),(size(skyrmbind_temp,1),size(skyrmbind_temp,2),4))
+#skyrmbind_err[:,:,:] = reshape(sqrt.(sum(skyrmbind_err_temp.^2,dims=4)./size(skyrmbind_err_temp,4)),(size(skyrmbind_err_temp,1),size(skyrmbind_err_temp,2),4))
 
-skyrmbindinv = inv.(skyrmbind)
-skyrmbindinv_err = skyrmbindinv.^2 .* skyrmbind_err
+skyrmbind[:,:,:] = reshape(meanfinite(skyrmbind_temp,4),(size(skyrmbind_temp,1),size(skyrmbind_temp,2),4))
+skyrmbind_err[:,:,:] = reshape(sqrt.(meanfinite(skyrmbind_err_temp.^2,4)),(size(skyrmbind_err_temp,1),size(skyrmbind_err_temp,2),4))
+
+#skyrmbindinv = inv.(skyrmbind)
+#skyrmbindinv_err = skyrmbindinv.^2 .* skyrmbind_err
 
 
-#=
+#magtemp
 for jj in 1:3
 figure()
     for ii in 1:4
+        #figure()
         subplot(2,2,ii)
         for i in jstart:jend #Jspace
             if ii == 2
-                errorbar(Temperature,(mag[:,i,ii,jj]+mag[:,i,ii+1,jj])/2,yerr = (mag_err[:,i,ii,jj]+mag_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-")
+                errorbar(Temperature,(mag[:,i,ii,jj]+mag[:,i,ii+1,jj])/2,yerr = (mag_err[:,i,ii,jj]+mag_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-",color=palette[mod(i,palsize)+1,:])
             else
-                errorbar(Temperature,mag[:,i,ii,jj],yerr = mag_err[:,i,ii,jj],fmt="o",linestyle="-")
+                errorbar(Temperature,mag[:,i,ii,jj],yerr = mag_err[:,i,ii,jj],fmt="o",linestyle="-",color=palette[mod(i,palsize)+1,:])
             end
-            title(" Curve "*string(N)*"x"*string(N))
         end
         if ii == 1
-            title("Magnetisation 00 - "*string(N)*"x"*string(N))
+            title("Magnetisation 00 - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 2
-            title("Magnetisation (0pi+pi0)/2 - "*string(N)*"x"*string(N))
-            legend("J1/J2 = ".*string.(J_space[jstart:jend]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+            title("Magnetisation (0pi+pi0)/2 - "*string(N)*"x"*string(N),fontsize = 17)
+            legend("J2/J1 = ".*string.(J_space[jstart:jend]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
-            title("Magnetisation pi0 - "*string(N)*"x"*string(N))
+            title("Magnetisation pi0 - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 4
-            title("Magnetisation pipi - "*string(N)*"x"*string(N))
+            title("Magnetisation pipi - "*string(N)*"x"*string(N),fontsize = 17)
         end
+        #legend("J1/J2 = ".*string.(J_space[jstart:jend]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         if ii>2
-            xlabel("Temperature")
+            xlabel("Temperature",fontsize = 14)
         end
         if mod(ii,2)==1
             if jj == 1
-                ylabel("abs(mag)")
+                ylabel(L"|mag|",fontsize = 14)
             elseif jj == 2
-                ylabel("mag.^2")
+                ylabel(L"$ mag^2$",fontsize = 14)
             elseif jj == 3
-                ylabel("mag.^4")
+                ylabel(L"$ mag^4$",fontsize = 14)
             end
         end
         grid("on")
     end
 end
 
+#skyrmtemp
 for jj in 1:3
     figure()
     for ii in 1:4
+        #figure()
         subplot(2,2,ii)
         for i in jstart:jend
             #errorbar(Temperature,mean(data["mag"*string(i)],2),mean(data["mag_err"*string(i)],2))
-            if ii == 2
-                errorbar(Temperature,(skyrm[:,i,ii,jj]+skyrm[:,i,ii+1,jj])/2,yerr = (skyrm_err[:,i,ii,jj]+skyrm_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-")
-            else
-                errorbar(Temperature,skyrm[:,i,ii,jj],yerr = skyrm_err[:,i,ii,jj],fmt="o",linestyle="-")
-            end
+            #if ii == 2
+            #    errorbar(Temperature,(skyrm[:,i,ii,jj]+skyrm[:,i,ii+1,jj])/2,yerr = (skyrm_err[:,i,ii,jj]+skyrm_err[:,i,ii+1,jj])/2,fmt="o",linestyle="-",color=palette[mod(i,palsize)+1,:])
+            #else
+                errorbar(Temperature,skyrm[:,i,ii,jj],yerr = skyrm_err[:,i,ii,jj],fmt="o",linestyle="-",color=palette[mod(i,palsize)+1,:])
+            #end
         end
         if ii == 1
             title("Skyrmion 00 - "*string(N)*"x"*string(N))
@@ -136,75 +156,78 @@ for jj in 1:3
     end
 end
 
+#skyrmj1j2
 for jj in 1:3
     figure()
     for ii in 1:4
         subplot(2,2,ii)
         for i in 1:1:length(Temperature)
-            if ii == 2
-                errorbar(J_space,(skyrm[i,:,ii,jj]+skyrm[i,:,ii+1,jj])/2,yerr = (skyrm_err[i,:,ii,jj]+skyrm_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-")
-            else
-                errorbar(J_space,skyrm[i,:,ii,jj],skyrm_err[i,:,ii,jj],fmt="o",linestyle="-")
-            end
+            #if ii == 2
+            #    errorbar(J_space,(skyrm[i,:,ii,jj]+skyrm[i,:,ii+1,jj])/2,yerr = (skyrm_err[i,:,ii,jj]+skyrm_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+            #else
+                errorbar(J_space,skyrm[i,:,ii,jj],skyrm_err[i,:,ii,jj],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+            #end
         end
         if ii == 1
-            title("Skyrmion 00 - "*string(N)*"x"*string(N))
+            title("Skyrmion 00 - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 2
-            title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+            title(L"Skyrmion $(0\pi+\pi 0)/2$ - "*string(N)*"x"*string(N),fontsize = 17)
             legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
-            title("Skyrmion pi0 - "*string(N)*"x"*string(N))
+            title(L"Skyrmion $\pi 0$ - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 4
-            title("Skyrmion pipi - "*string(N)*"x"*string(N))
+            title(L"Skyrmion $\pi \pi$ - "*string(N)*"x"*string(N),fontsize = 17)
         end
+        #legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         if ii>2
-            xlabel("J1/J2")
+            xlabel(L"$J_1/J_2$",fontsize = 14)
         end
         if mod(ii,2)==1
             if jj == 1
-                ylabel("abs(skyrm)")
+                ylabel(L"|skyrm|",fontsize = 14)
             elseif jj == 2
-                ylabel("skyrm.^2")
+                ylabel(L"$\langle skyrm^2 \rangle$",fontsize = 14)
             elseif jj == 3
-                ylabel("skyrm.^4")
+                ylabel(L"skyrm^4",fontsize = 14)
             end
         end
+        axvline(x=0.5,linestyle="-.",color="r")
         grid("on")
     end
 end
-=#
 
+#magj1j2
 for jj in 1:3
     figure()
     for ii in 1:4
         subplot(2,2,ii)
         for i in 1:1:length(Temperature)
-            if ii == 2
-                errorbar(J_space,(mag[i,:,ii,jj]+mag[i,:,ii+1,jj])/2,yerr = (mag_err[i,:,ii,jj]+mag_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-")
-            else
-                errorbar(J_space,mag[i,:,ii,jj],mag_err[i,:,ii,jj],fmt="o",linestyle="-")
-            end
+            #if ii == 2
+            #    errorbar(J_space,(mag[i,:,ii,jj]+mag[i,:,ii+1,jj])/2,yerr = (mag_err[i,:,ii,jj]+mag_err[i,:,ii+1,jj])/2,fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+            #else
+                errorbar(J_space,mag[i,:,ii,jj],mag_err[i,:,ii,jj],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+            #end
         end
         if ii == 1
-            title("Magnetisation 00 - "*string(N)*"x"*string(N))
+            title("Magnetisation 00 - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 2
-            title("Magnetisation (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+            title(L"Magnetisation $(0\pi+ \pi 0)/2$ - "*string(N)*"x"*string(N),fontsize = 17)
             legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
-            title("Magnetisation pi0 - "*string(N)*"x"*string(N))
+            title(L"Magnetisation $\pi 0$ - "*string(N)*"x"*string(N),fontsize = 17)
         elseif ii == 4
-            title("Magnetisation pipi - "*string(N)*"x"*string(N))
+            title(L"Magnetisation $\pi \pi$ - "*string(N)*"x"*string(N),fontsize = 17)
         end
         if ii>2
-            xlabel("J1/J2")
+            xlabel(L"$J_1/J_2$",fontsize = 14)
         end
         if mod(ii,2)==1
             if jj == 1
-                ylabel("abs(mag)")
+                ylabel(L"|mag|",fontsize = 14)
             elseif jj == 2
-                ylabel("mag.^2")
+                ylabel(L"$ \langle mag^2 \rangle$",fontsize = 14)
             elseif jj == 3
-                ylabel("mag.^4")
+                ylabel(L"$ mag^4$",fontsize = 14)
             end
         end
         axvline(x=0.5,linestyle="-.",color="r")
@@ -216,36 +239,35 @@ end
 jstart = 1
 jend = length(J_space)
 
-#=
+#SKYRMBIND
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        if ii == 2
-            errorbar(J_space[jstart:jend],(skyrmbind[i,jstart:jend,ii]+skyrmbind[i,jstart:jend,ii+1])/2,sqrt.(skyrmbind_err[i,jstart:jend,ii].^2+skyrmbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
-        else
-            errorbar(J_space[jstart:jend],skyrmbind[i,jstart:jend,ii],skyrmbind_err[i,jstart:jend,ii],fmt="o",linestyle="-")
-        end
+        errorbar(J_space[jstart:jend],skyrmbind[i,jstart:jend,ii],skyrmbind_err[i,jstart:jend,ii],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
     end
     if ii == 1
-        title("Skyrmion 00 - "*string(N)*"x"*string(N))
+        title("Skyrmion 00 - "*string(N)*"x"*string(N),fontsize = 17)
     elseif ii == 2
-        title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+        title(L"Skyrmion $(0\pi+\pi 0)/2$ - "*string(N)*"x"*string(N),fontsize = 17)
         legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
     elseif ii == 3
-        title("Skyrmion pi0 - "*string(N)*"x"*string(N))
+        title(L"Skyrmion $\pi 0$ - "*string(N)*"x"*string(N),fontsize = 17)
     elseif ii == 4
-        title("Skyrmion pipi - "*string(N)*"x"*string(N))
+        title(L"Skyrmion $\pi \pi$ - "*string(N)*"x"*string(N),fontsize = 17)
     end
     if ii>2
-        xlabel("J1/J2")
+        xlabel(L"$J_1/J_2$",fontsize = 14)
     end
     if mod(ii,2)==1
-            ylabel("(skyrm)^4/(skyrm^2)^2")
+            ylabel(L"$\langle skyrm^2 \rangle ^2 / \langle skyrm^4 \rangle$",fontsize = 14)
     end
+    axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end
-=#
+
+#=
+#SKYRMBINDINV
 figure()
 for ii in 1:4
     subplot(2,2,ii)
@@ -276,33 +298,35 @@ for ii in 1:4
     axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end
+=#
 
+#MAGBINDER
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        if ii == 2
-            errorbar(J_space[jstart:jend],(magbind[i,jstart:jend,ii]+magbind[i,jstart:jend,ii+1])/2,sqrt.(magbind_err[i,jstart:jend,ii].^2+magbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
-        else
-            errorbar(J_space[jstart:jend],magbind[i,jstart:jend,ii],magbind_err[i,jstart:jend,ii],fmt="o",linestyle="-")
-        end
+        #if ii == 2
+        #    errorbar(J_space[jstart:jend],(magbind[i,jstart:jend,ii]+magbind[i,jstart:jend,ii+1])/2,sqrt.(magbind_err[i,jstart:jend,ii].^2+magbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
+        #else
+            errorbar(J_space[jstart:jend],magbind[i,jstart:jend,ii],magbind_err[i,jstart:jend,ii],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+        #end
 
     end
     if ii == 1
-        title("Magnetisation Binder 00 - "*string(N)*"x"*string(N))
+        title("Magnetisation 00 - "*string(N)*"x"*string(N),fontsize = 17)
     elseif ii == 2
-        title("Magnetisation Binder (0pi+pi0)/2 - "*string(N)*"x"*string(N))
+        title(L"Magnetisation $(0\pi+ \pi 0)/2$ - "*string(N)*"x"*string(N),fontsize = 17)
         legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
     elseif ii == 3
-        title("Magnetisation Binder pi0 - "*string(N)*"x"*string(N))
+        title(L"Magnetisation $\pi 0$ - "*string(N)*"x"*string(N),fontsize = 17)
     elseif ii == 4
-        title("Magnetisation Binder pipi - "*string(N)*"x"*string(N))
+        title(L"Magnetisation $\pi \pi$ - "*string(N)*"x"*string(N),fontsize = 17)
     end
     if ii>2
-        xlabel("J1/J2")
+        xlabel(L"$J_1/J_2$",fontsize = 14)
     end
     if mod(ii,2)==1
-            ylabel("(mag)^4/(mag^2)^2")
+            ylabel(L"$\langle mag^4 \rangle/\langle mag^2 \rangle ^2$",fontsize = 14)
     end
     axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
