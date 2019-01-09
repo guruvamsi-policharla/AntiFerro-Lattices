@@ -125,7 +125,7 @@ function bindjack(vec4,vec2)
     n = length(vec4)
     s4 = sum(vec4)
     s2 = sum(vec2)
-    vec_jack = ((s4 .- vec4)./(s2 .- vec2).^2) .* (n-1)
+    vec_jack = (((s2 .- vec2).^2) ./(s4 .- vec4)) ./ (n-1)
 
     jack_avg = mean(vec_jack)
     jack_err = sqrt(abs(mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
@@ -221,65 +221,6 @@ function spher_tri_area(a,b,c)
             return (a1 + a2 + a3 - pi)*sign(dot(a,cross(b,c)))
         end
     end
-end
-
-
-function plotlat(lat,index1=0,index2=0)
-    #fig = figure()
-    w, h = figaspect(0.4)
-    fig = figure(figsize=(w,h))
-    M = size(lat,1)
-    N = size(lat,2)
-    X = repmat(1:M,M)
-    Y = []
-    for i in 1:M
-        Y = vcat(Y,repmat([i],M))
-    end
-
-    Z = zeros(size(lat,2)^2)
-    U = zeros(M*N)
-    V = zeros(M*N)
-    W = zeros(M*N)
-    col = zeros(M*N)
-    for i in 1:M
-        for j in 1:N
-            U[(i-1)*M+j] = lat[i,j][1]
-            V[(i-1)*M+j] = lat[i,j][2]
-            W[(i-1)*M+j] = lat[i,j][3]
-            if(lat[i,j][3]>0)
-                col[(i-1)*M+j] = 'g'
-            else
-                col[(i-1)*M+j] = 'b'
-            end
-        end
-    end
-
-    q = zeros(M,N)
-    for i in 1:M
-       for j in 1:N
-           a = lat[i,j]#centre
-           b = lat[i,mod(j,N)+1]#right
-           c = lat[mod(i,M)+1,mod(j,N)+1]#rightdown
-           d = lat[mod(i,M)+1,j]#down
-           q[i,j] = (spher_tri_area(a,b,c) + spher_tri_area(a,c,d))/(4*pi)
-       end
-    end
-
-    #contourf(X, Y, q)
-    #colorbar()
-    #subplot(121,projection="3d")
-    #quiver(X,Y,Z,U,V,W)
-    #zlim(-1,1)
-    #title("Skyrmion Number = "*string.(skyrmion_number(lat)))
-    subplot(121)
-    contourf(q,vmin=-1,vmax=1)
-    colorbar()
-    title("Skyrmion Number = "* string.(skyrmion_number(lat)))
-    subplot(122)
-    quiver(X,Y,U,V,col)
-    title("Skyrmion Number = "* string.(skyrmion_number(lat)))
-    savefig("/home/vamsi/Github/quiveranim/" * string((index1-1)*M*M+index2) * ".png")
-    close()
 end
 
 function lat_transform(lat,latindex)
@@ -383,11 +324,21 @@ function montecarlo(Temperature,N,J_space)
 
             for jj in 1:4
                 for ii in 1:3
-                    skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
-                    M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                    if jj == 2
+                        skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife((skyrm_jack[:,ii,jj]+skyrm_jack[:,ii,jj+1])./2)
+                        M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife((M_jack[:,ii,jj]+M_jack[:,ii,jj+1])./2)
+                    else
+                        skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
+                        M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                    end
                 end
-                magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
-                skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])
+                if jj == 2
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack((M_jack[:,3,jj]+M_jack[:,3,jj+1])./2,(M_jack[:,2,jj]+M_jack[:,2,jj+1])./2)
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack((skyrm_jack[:,3,jj]+skyrm_jack[:,3,jj+1])./2,(skyrm_jack[:,2,jj]+skyrm_jack[:,2,jj+1])./2)
+                else
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])
+                end
 	    end
             Tcount = Tcount + 1
 
