@@ -1,11 +1,14 @@
 #Includes
 using Distributed
-addprocs(Sys.CPU_THREADS)
-#addprocs(2)
+#addprocs(Sys.CPU_THREADS)
+addprocs(4)
 println(nprocs())
 @everywhere using SharedArrays
-@everywhere include("/home/guru/repos/antiFerro/skyrm_aux.jl")
-#@everywhere include("skyrm_aux.jl")
+#@everywhere include("/home/guru/repos/antiFerro/skyrm_aux.jl")
+@everywhere include("skyrm_aux.jl")
+@everywhere include("error_aux.jl")
+@everywhere include("energy_aux.jl")
+@everywhere include("lat_aux.jl")
 @everywhere using Distributions
 @everywhere using StatsBase
 @everywhere using LinearAlgebra
@@ -32,13 +35,12 @@ magbind_err_temp = SharedArray{Float64,4}(length(Temperature),length(J_space),4,
 skyrmbind_temp = SharedArray{Float64,4}(length(Temperature),length(J_space),4,nprocs()-1)
 skyrmbind_err_temp = SharedArray{Float64,4}(length(Temperature),length(J_space),4,nprocs()-1)
 
-qFT = SharedArray{Float64,4}(N,N,length(J_space),nprocs()-1)
 proc_complete = SharedArray{Int,1}(nprocs())
 for i in 1:nprocs()
     proc_complete[i] = 0
 end
 @distributed for i in 2:nprocs()
-    skyrm_temp[:,:,:,:,i-1],skyrm_err_temp[:,:,:,:,i-1],mag_temp[:,:,:,:,i-1],mag_err_temp[:,:,:,:,i-1],magbind_temp[:,:,:,i-1],magbind_err_temp[:,:,:,i-1],skyrmbind_temp[:,:,:,i-1],skyrmbind_err_temp[:,:,:,i-1],qFT[:,:,:,i-1] = fetch(@spawnat i montecarlo(Temperature,N,J_space))
+    skyrm_temp[:,:,:,:,i-1],skyrm_err_temp[:,:,:,:,i-1],mag_temp[:,:,:,:,i-1],mag_err_temp[:,:,:,:,i-1],magbind_temp[:,:,:,i-1],magbind_err_temp[:,:,:,i-1],skyrmbind_temp[:,:,:,i-1],skyrmbind_err_temp[:,:,:,i-1] = fetch(@spawnat i montecarlo(Temperature,N,J_space))
     proc_complete[i] = 1
 end
 
