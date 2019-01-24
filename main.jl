@@ -53,7 +53,7 @@ for i in 1:5000
 	break
     end
     println(proc_complete)
-    sleep(350)
+    sleep(35)
 end
 
 println("ending")
