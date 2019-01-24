@@ -26,7 +26,7 @@ nanmean(x,y) = mapslices(nanmean,x,y)
 #f=jldopen("./data/Full Fledged/data16x16full.jld2","r")
 
 #f=jldopen("./data/fullres/data8x8fullresbind_1.jld2","r")
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/data4x4fullresbind2019-01-09T16:54:03.516.jld2","r")
+f=jldopen("/home/vamsi/GitHub/AntiFerro-Lattices/Data/data32x32fullresbind2018-11-13T22:18:23.94.jld2","r")
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
 skyrm_err_temp = f["skyrm_err_temp"].s
@@ -71,10 +71,6 @@ magbind_err[:,:,:] = reshape(sqrt.(sum(magbind_err_temp.^2,dims=4)./size(magbind
 
 skyrmbind[:,:,:] = reshape(meanfinite(skyrmbind_temp,4),(size(skyrmbind_temp,1),size(skyrmbind_temp,2),4))
 skyrmbind_err[:,:,:] = reshape(sqrt.(meanfinite(skyrmbind_err_temp.^2,4)),(size(skyrmbind_err_temp,1),size(skyrmbind_err_temp,2),4))
-
-#skyrmbindinv = inv.(skyrmbind)
-#skyrmbindinv_err = skyrmbindinv.^2 .* skyrmbind_err
-
 
 #magtemp
 for jj in 1:3
@@ -235,10 +231,6 @@ for jj in 1:3
     end
 end
 
-
-jstart = 1
-jend = length(J_space)
-
 #SKYRMBIND
 figure()
 for ii in 1:4
@@ -265,40 +257,6 @@ for ii in 1:4
     axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end
-
-#=
-#SKYRMBINDINV
-figure()
-for ii in 1:4
-    subplot(2,2,ii)
-    for i in 1:1:length(Temperature)
-        if ii == 2
-            errorbar(J_space[jstart:jend],(skyrmbindinv[i,jstart:jend,ii]+skyrmbindinv[i,jstart:jend,ii+1])/2,sqrt.(skyrmbindinv_err[i,jstart:jend,ii].^2+skyrmbindinv_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
-        else
-            errorbar(J_space[jstart:jend],skyrmbindinv[i,jstart:jend,ii],skyrmbindinv_err[i,jstart:jend,ii],fmt="o",linestyle="-")
-        end
-
-    end
-    if ii == 1
-        title("Skyrmion 00 - "*string(N)*"x"*string(N))
-    elseif ii == 2
-        title("Skyrmion (0pi+pi0)/2 - "*string(N)*"x"*string(N))
-        legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
-    elseif ii == 3
-        title("Skyrmion pi0 - "*string(N)*"x"*string(N))
-    elseif ii == 4
-        title("Skyrmion pipi - "*string(N)*"x"*string(N))
-    end
-    if ii>2
-        xlabel("J1/J2")
-    end
-    if mod(ii,2)==1
-            ylabel("(skyrm^2)^2/(skyrm)^4")
-    end
-    axvline(x=0.5,linestyle="-.",color="r")
-    grid("on")
-end
-=#
 
 #MAGBINDER
 figure()
