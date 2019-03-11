@@ -1,4 +1,4 @@
-##Includes
+#Includes
 using Distributed
 addprocs(Sys.CPU_THREADS)
 #addprocs(4)
@@ -14,6 +14,7 @@ println(nprocs())
 @everywhere include("energy_aux.jl")
 @everywhere include("lat_aux.jl")
 
+@everywhere using SharedArrays
 @everywhere using Distributions
 @everywhere using StatsBase
 @everywhere using LinearAlgebra
