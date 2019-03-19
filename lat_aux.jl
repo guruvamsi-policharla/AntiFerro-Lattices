@@ -93,7 +93,7 @@ function transient_results(lat, transient::Int, J, T)
 end
 
 function montecarlo(Temperature,N,J_space)
-    mcs = 15000
+    mcs = 7000
     M = N
 
     normalisation=(1.0/float(M*N))
@@ -168,9 +168,9 @@ function montecarlo(Temperature,N,J_space)
                     M_jack[i,2,latindex] = (norm(Mag)*normalisation).^2
                     M_jack[i,3,latindex] = (norm(Mag)*normalisation).^4
 
-                    E_jack[i,1,latindex] = (norm(E)*normalisation)
-                    E_jack[i,2,latindex] = (norm(E)*normalisation).^2
-                    E_jack[i,3,latindex] = (norm(E)*normalisation).^4
+                    E_jack[i,1,latindex] = (E*normalisation)
+                    E_jack[i,2,latindex] = (E*normalisation).^2
+                    E_jack[i,3,latindex] = (E*normalisation).^4
                 end
             end
 

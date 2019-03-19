@@ -15,7 +15,7 @@ end
 nanmean(x) = mean(filter(!isnan,x))
 nanmean(x,y) = mapslices(nanmean,x,y)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/data4x4fullresbind2019-03-12T01:55:11.683.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/4x4/j1j2weights4x4fullresbind2019-03-07T12:15:33.986.jld2","r")
 E_temp = f["E_temp"].s
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
@@ -135,8 +135,9 @@ for jj in 1:3
         grid("on")
     end
 end
-=#
 
+=#
+#=
 #skyrmj1j2
 for jj in 1:3
     figure()
@@ -231,11 +232,46 @@ for jj in 1:3
         end
         if mod(ii,2)==1
             if jj == 1
-                ylabel(L"|E|",fontsize = 14)
+                ylabel(L"E",fontsize = 14)
             elseif jj == 2
                 ylabel(L"$ \langle E^2 \rangle$",fontsize = 14)
             elseif jj == 3
-                ylabel(L"$ E^4$",fontsize = 14)
+                ylabel(L"$ \langle E^4 \rangle$",fontsize = 14)
+            end
+        end
+        axvline(x=0.5,linestyle="-.",color="r")
+        grid("on")
+    end
+end
+=#
+#Susceptibilityj1j2
+for jj in 1:3
+    figure()
+    for ii in 1:4
+        subplot(2,2,ii)
+        for i in 1:1:length(Temperature)
+            errorbar(J_space,mag[i,:,ii,jj,1].*(N^2/Temperature[i]),mag[i,:,ii,jj,2].*(N^2/Temperature[i]),fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+        end
+        if ii == 1
+            title("Magnetisation 00 - "*string(N)*"x"*string(N),fontsize = 17)
+        elseif ii == 2
+            title(L"Magnetisation $(0\pi+ \pi 0)/2$ - "*string(N)*"x"*string(N),fontsize = 17)
+            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+        elseif ii == 3
+            title(L"Magnetisation $\pi 0$ - "*string(N)*"x"*string(N),fontsize = 17)
+        elseif ii == 4
+            title(L"Magnetisation $\pi \pi$ - "*string(N)*"x"*string(N),fontsize = 17)
+        end
+        if ii>2
+            xlabel(L"$J_2/J_1$",fontsize = 14)
+        end
+        if mod(ii,2)==1
+            if jj == 1
+                ylabel(L"|mag|",fontsize = 14)
+            elseif jj == 2
+                ylabel(L"$ \langle mag^2 \rangle$",fontsize = 14)
+            elseif jj == 3
+                ylabel(L"$ mag^4$",fontsize = 14)
             end
         end
         axvline(x=0.5,linestyle="-.",color="r")
@@ -270,9 +306,9 @@ for ii in 1:4
     axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end
-=#
+
 #MAGBINDER
-#=
+
 figure()
 for ii in 1:4
     subplot(2,2,ii)
