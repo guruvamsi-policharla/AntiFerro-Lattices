@@ -15,7 +15,7 @@ end
 nanmean(x) = mean(filter(!isnan,x))
 nanmean(x,y) = mapslices(nanmean,x,y)
 
-f=jldopen("/home/vamsi/Github/J1J2-weights/Data/j1j2weights4x4fullresbind2019-03-07T12:15:33.986.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/32x32/data32x32fullresbind2019-03-16T01:46:14.997.jld2","r")
 E_temp = f["E_temp"].s
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
@@ -242,7 +242,7 @@ for jj in 1:3
 end
 =#
 
-
+#=
 #Susceptibilityj1j2
 figure()
 for ii in 1:4
@@ -277,14 +277,14 @@ for ii in 1:4
     grid("on")
 end
 
-
+=#
 #SKYRMBIND
-#=
+
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        errorbar(J_space[jstart:jend],skyrmbind[i,jstart:jend,ii],skyrmbind_err[i,jstart:jend,ii],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
+        errorbar(J_space[jstart:jend],skyrmbind[i,jstart:jend,ii,1],skyrmbind[i,jstart:jend,ii,2],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
     end
     if ii == 1
         title("Skyrmion 00 - "*string(N)*"x"*string(N),fontsize = 17)
@@ -306,18 +306,14 @@ for ii in 1:4
     grid("on")
 end
 
+
 #MAGBINDER
 
 figure()
 for ii in 1:4
     subplot(2,2,ii)
     for i in 1:1:length(Temperature)
-        #if ii == 2
-        #    errorbar(J_space[jstart:jend],(magbind[i,jstart:jend,ii]+magbind[i,jstart:jend,ii+1])/2,sqrt.(magbind_err[i,jstart:jend,ii].^2+magbind_err[i,jstart:jend,ii+1].^2)./sqrt(2),fmt="o",linestyle="-")
-        #else
-            errorbar(J_space[jstart:jend],magbind[i,jstart:jend,ii],magbind_err[i,jstart:jend,ii],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
-        #end
-
+        errorbar(J_space[jstart:jend],magbind[i,jstart:jend,ii,1],magbind[i,jstart:jend,ii,2],fmt="o",linestyle="-",color=palette[mod(3*i-3,palsize)+1,:])
     end
     if ii == 1
         title("Magnetisation 00 - "*string(N)*"x"*string(N),fontsize = 17)
@@ -338,4 +334,3 @@ for ii in 1:4
     axvline(x=0.5,linestyle="-.",color="r")
     grid("on")
 end
-=#
