@@ -340,7 +340,7 @@ function plot_arr(N_arr, Temperature_arr, J_space_arr, E_arr, mag_arr, skyrm_arr
     =#
 
     #MAGBINDER
-
+    #=
     figure()
     for ii in 1:4
         subplot(2,2,ii)
@@ -361,7 +361,7 @@ function plot_arr(N_arr, Temperature_arr, J_space_arr, E_arr, mag_arr, skyrm_arr
             title("Magnetisation Binder 00",fontsize = 17)
         elseif ii == 2
             title(L"Magnetisation Binder $(0\pi+ \pi 0)/2$",fontsize = 17)
-            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+            legend("N = ".*string.(N_arr[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
             title(L"Magnetisation Binder $\pi 0$",fontsize = 17)
         elseif ii == 4
@@ -376,8 +376,49 @@ function plot_arr(N_arr, Temperature_arr, J_space_arr, E_arr, mag_arr, skyrm_arr
         axvline(x=0.5,linestyle="-.",color="r")
         grid("on")
     end
+    =#
+
+    #MAGBINDERXT
+
+    figure()
+    for ii in 1:4
+        subplot(2,2,ii)
+        for j in 1:length(N_arr)
+            N = N_arr[j]
+            Temperature = Temperature_arr[j]
+            J_space = J_space_arr[j]
+            E = E_arr[j]
+            mag = mag_arr[j]
+            skyrm = skyrm_arr[j]
+            magbind = magbind_arr[j]
+            skyrmbind = skyrmbind_arr[j]
+            for i in 15:15:15
+                errorbar(Temperature,magbind[:,i,ii,1],magbind[:,i,ii,2],fmt="o",linestyle="-")
+            end
+        end
+        if ii == 1
+            title("Magnetisation Binder 00 J1/J2 = 1",fontsize = 17)
+        elseif ii == 2
+            title(L"Magnetisation Binder $(0\pi+ \pi 0)/2$",fontsize = 17)
+            legend("N = ".*string.(N_arr[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+        elseif ii == 3
+            title(L"Magnetisation Binder $\pi 0$",fontsize = 17)
+        elseif ii == 4
+            title(L"Magnetisation Binder $\pi \pi$",fontsize = 17)
+        end
+        if ii>2
+            xlabel("T",fontsize = 14)
+        end
+        if mod(ii,2)==1
+                ylabel(L"$\langle mag^4 \rangle/\langle mag^2 \rangle ^2$",fontsize = 14)
+        end
+        axvline(x=0.5,linestyle="-.",color="r")
+        grid("on")
+    end
 end
 
+
+#=
 f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/4x4/data4x4fullresbind2019-03-13T05:26:19.273.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
@@ -414,5 +455,49 @@ mag_arr = push!(mag_arr,mag)
 skyrm_arr = push!(skyrm_arr,skyrm)
 magbind_arr = push!(magbind_arr,magbind)
 skyrmbind_arr = push!(skyrmbind_arr,skyrmbind)
+=#
+
+
+################################################################################
+
+
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/4x4/data4x4fullresbind2019-03-13T05:26:53.877.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+N_arr = [N]
+Temperature_arr = [Temperature]
+J_space_arr = [J_space]
+E_arr = [E]
+mag_arr = [mag]
+skyrm_arr = [skyrm]
+magbind_arr = [magbind]
+skyrmbind_arr = [skyrmbind]
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/16x16/data16x16fullresbind2019-03-15T15:12:44.616.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+N_arr = push!(N_arr,N)
+Temperature_arr = push!(Temperature_arr,Temperature)
+J_space_arr = push!(J_space_arr,J_space)
+E_arr = push!(E_arr,E)
+mag_arr = push!(mag_arr,mag)
+skyrm_arr = push!(skyrm_arr,skyrm)
+magbind_arr = push!(magbind_arr,magbind)
+skyrmbind_arr = push!(skyrmbind_arr,skyrmbind)
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/32x32/data32x32fullresbind2019-03-16T02:11:03.114.jld2","r")
+
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+N_arr = push!(N_arr,N)
+Temperature_arr = push!(Temperature_arr,Temperature)
+J_space_arr = push!(J_space_arr,J_space)
+E_arr = push!(E_arr,E)
+mag_arr = push!(mag_arr,mag)
+skyrm_arr = push!(skyrm_arr,skyrm)
+magbind_arr = push!(magbind_arr,magbind)
+skyrmbind_arr = push!(skyrmbind_arr,skyrmbind)
+
 
 plot_arr(N_arr, Temperature_arr, J_space_arr, E_arr, mag_arr, skyrm_arr, magbind_arr, skyrmbind_arr)
