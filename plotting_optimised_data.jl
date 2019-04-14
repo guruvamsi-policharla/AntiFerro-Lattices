@@ -15,7 +15,7 @@ end
 nanmean(x) = mean(filter(!isnan,x))
 nanmean(x,y) = mapslices(nanmean,x,y)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/32x32/data32x32fullresbind2019-03-16T01:46:14.997.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/data4x4fullresbind2019-04-14T19:17:23.643.jld2","r")
 E_temp = f["E_temp"].s
 mag_temp = f["mag_temp"].s
 skyrm_temp = f["skyrm_temp"].s
@@ -134,6 +134,8 @@ for jj in 1:3
 end
 
 =#
+
+
 #=
 #skyrmj1j2
 for jj in 1:3
@@ -170,7 +172,7 @@ for jj in 1:3
         grid("on")
     end
 end
-
+=#
 #magj1j2
 for jj in 1:3
     figure()
@@ -205,7 +207,7 @@ for jj in 1:3
         grid("on")
     end
 end
-
+#=
 #Ej1j2
 for jj in 1:3
     figure()

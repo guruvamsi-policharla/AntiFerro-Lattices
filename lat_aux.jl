@@ -124,15 +124,12 @@ function montecarlo(Temperature,N,J_space)
         Tcount = 1
         for T in Temperature
             transient_results(lat,3000,J,T)
-            E = total_energy(J,lat)
             for i in 1:mcs
+
                 for j in 1:M*N
                     x = rand(1:M)
                     y = rand(1:N)
-                    E_0 = energy_pos(x,y,J,lat)
-                    if(test_flip(x,y,J,lat,T))
-                        E = E + energy_pos(x,y,J,lat) - E_0
-                    end
+                    test_flip(x,y,J,lat,T)
                 end
 
                 for latindex in 1:4
