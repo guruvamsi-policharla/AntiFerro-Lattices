@@ -421,18 +421,18 @@ end
 
 function plot_arr(N_arr,Temperature,J_space,E_arr,mag_arr,skyrm_arr,magbind_arr,skyrmbind_arr)
     #mag_sizes
-    #=
+
     for jj in 1:3
         figure()
         for ii in 1:4
             subplot(2,2,ii)
-            for j in 1:1
-                for i in 1:1:1
+            for i in 1:1:length(Temperature)
+                for j in 1:1:length(J_space)
                     errorbar(inv.(N_arr),mag_arr[j,i,ii,jj,1,:],mag_arr[j,i,ii,jj,2,:],fmt="o",linestyle="-")
                 end
             end
             if ii == 1
-                title("Magnetisation 00 J2/J1 = 0",fontsize = 17)
+                title("Magnetisation 00 J2/J1 = 1",fontsize = 17)
             elseif ii == 2
                 title(L"Magnetisation $(0\pi+ \pi 0)/2$",fontsize = 17)
                 legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
@@ -456,19 +456,21 @@ function plot_arr(N_arr,Temperature,J_space,E_arr,mag_arr,skyrm_arr,magbind_arr,
             grid("on")
         end
     end
-    =#
+
+
     #skyrm_sizes
+    #=
     for jj in 1:3
         figure()
         for ii in 1:4
             subplot(2,2,ii)
-            for j in 1:1
-                for i in 1:1:1
+            for i in 1:1:length(Temperature)
+                for j in 1:1:length(J_space)
                     errorbar(inv.(N_arr),skyrm_arr[j,i,ii,jj,1,:],skyrm_arr[j,i,ii,jj,2,:],fmt="o",linestyle="-")
                 end
             end
             if ii == 1
-                title("Skyrmion 00 J2/J1 = 0",fontsize = 17)
+                title("Skyrmion 00 J2/J1 = 1",fontsize = 17)
             elseif ii == 2
                 title(L"Skyrmion $(0\pi+\pi 0)/2$",fontsize = 17)
                 legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
@@ -493,19 +495,22 @@ function plot_arr(N_arr,Temperature,J_space,E_arr,mag_arr,skyrm_arr,magbind_arr,
         end
     end
 
-    #magbind_sizes
-    #=
+    =#
+    #MAGBINDER_sizes
+
     figure()
     for ii in 1:4
         subplot(2,2,ii)
-            for i in 1:1:1
-                errorbar(inv.(N_arr),magbind_arr[i,:,ii,1,:],magbind_arr[i,:,ii,2,:],fmt="o",linestyle="-")
+        for i in 1:1:length(Temperature)
+            for j in 1:1:length(J_space)
+                errorbar(inv.(N_arr),magbind_arr[i,j,ii,1,:],magbind_arr[i,j,ii,2,:],fmt="o",linestyle="-")
             end
+        end
         if ii == 1
             title("Magnetisation Binder 00 J2/J1 = 0",fontsize = 17)
         elseif ii == 2
             title(L"Magnetisation Binder $(0\pi+ \pi 0)/2$",fontsize = 17)
-            legend("N = ".*string.(N_list[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
         elseif ii == 3
             title(L"Magnetisation Binder $\pi 0$",fontsize = 17)
         elseif ii == 4
@@ -515,9 +520,38 @@ function plot_arr(N_arr,Temperature,J_space,E_arr,mag_arr,skyrm_arr,magbind_arr,
             xlabel(L"$1/L$",fontsize = 14)
         end
         if mod(ii,2)==1
-                ylabel(L"$\langle mag^2 \rangle ^2\langle mag^4 \rangle/$",fontsize = 14)
+                ylabel(L"$\langle mag^2 \rangle ^2 / \langle mag^4 \rangle$",fontsize = 14)
         end
-        axvline(x=0.5,linestyle="-.",color="r")
+        grid("on")
+    end
+
+
+    #Skyrmbind_sizes
+    #=
+    figure()
+    for ii in 1:4
+        subplot(2,2,ii)
+        for i in 1:1:length(Temperature)
+            for j in 1:1:length(J_space)
+                errorbar(inv.(N_arr),skyrmbind_arr[i,j,ii,1,:],skyrmbind_arr[i,j,ii,2,:],fmt="o",linestyle="-")
+            end
+        end
+        if ii == 1
+            title("Skyrmion Binder 00 J2/J1 = 0",fontsize = 17)
+        elseif ii == 2
+            title(L"Skyrmion Binder $(0\pi+\pi 0)/2$",fontsize = 17)
+            legend("T = ".*string.(Temperature[1:1:end]),bbox_to_anchor=[1.05,1],loc=2,ncol = 1)
+        elseif ii == 3
+            title(L"Skyrmion Binder $\pi 0$",fontsize = 17)
+        elseif ii == 4
+            title(L"Skyrmion Binder $\pi \pi$",fontsize = 17)
+        end
+        if ii>2
+            xlabel(L"$1/L$",fontsize = 14)
+        end
+        if mod(ii,2)==1
+                ylabel(L"$\langle skyrm^2 \rangle ^2 / \langle skyrm^4 \rangle$",fontsize = 14)
+        end
         grid("on")
     end
     =#
@@ -525,7 +559,8 @@ end
 
 ################################################################################
 #=
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data4x4fullresbind2019-04-15T19:39:17.418.jld2","r")
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data4x4fullresbind2019-04-16T10:05:00.11.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = [N]
@@ -545,7 +580,7 @@ skyrm_arr = skyrm
 magbind_arr = magbind
 skyrmbind_arr = skyrmbind
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data8x8fullresbind2019-04-15T19:38:53.557.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data8x8fullresbind2019-04-16T18:52:51.154.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = push!(N_list,N)
@@ -565,7 +600,7 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data32x32fullresbind2019-04-15T19:57:16.681.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data16x16fullresbind2019-04-16T22:43:32.896.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = push!(N_list,N)
@@ -585,7 +620,7 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data64x64fullresbind2019-04-09T21:51:19.347.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data32x32fullresbind2019-04-16T23:22:52.17.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 
@@ -596,7 +631,29 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data256x256fullresbind2019-04-15T13:23:44.605.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data64x64fullresbind2019-04-17T00:08:36.017.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+
+N_arr = cat(N_arr,N,dims = ndims(N)+1)
+E_arr = cat(E_arr,E,dims = ndims(E)+1)
+mag_arr = cat(mag_arr,mag,dims = ndims(mag)+1)
+skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
+magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
+skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data256x256fullresbind2019-04-17T14:31:07.14.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+
+N_arr = cat(N_arr,N,dims = ndims(N)+1)
+E_arr = cat(E_arr,E,dims = ndims(E)+1)
+mag_arr = cat(mag_arr,mag,dims = ndims(mag)+1)
+skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
+magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
+skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data400x400fullresbind2019-04-25T03:04:44.051.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 
@@ -607,11 +664,10 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 =#
-
 ################################################################################
 
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data4x4fullresbind2019-04-15T19:39:17.347.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data4x4fullresbind2019-04-16T10:04:59.091.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = [N]
@@ -631,7 +687,7 @@ skyrm_arr = skyrm
 magbind_arr = magbind
 skyrmbind_arr = skyrmbind
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data8x8fullresbind2019-04-15T19:38:53.423.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data8x8fullresbind2019-04-16T18:39:27.188.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = push!(N_list,N)
@@ -651,7 +707,7 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data32x32fullresbind2019-04-15T19:57:16.81.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data16x16fullresbind2019-04-16T22:43:32.378.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 N_list = push!(N_list,N)
@@ -671,7 +727,7 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data64x64fullresbind2019-04-09T21:49:38.935.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data32x32fullresbind2019-04-16T22:53:01.164.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 
@@ -682,7 +738,7 @@ skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
 
-f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J0 data/J0data256x256fullresbind2019-04-15T13:07:03.801.jld2","r")
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data64x64fullresbind2019-04-17T00:07:45.272.jld2","r")
 N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
 
 
@@ -692,5 +748,28 @@ mag_arr = cat(mag_arr,mag,dims = ndims(mag)+1)
 skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
 magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
 skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data256x256fullresbind2019-04-17T14:19:25.632.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+
+N_arr = cat(N_arr,N,dims = ndims(N)+1)
+E_arr = cat(E_arr,E,dims = ndims(E)+1)
+mag_arr = cat(mag_arr,mag,dims = ndims(mag)+1)
+skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
+magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
+skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
+
+f=jldopen("/home/vamsi/Github/AntiFerro-Lattices/Data/J1 data/J1data400x400fullresbind2019-04-25T21:59:55.681.jld2","r")
+N, Temperature, J_space, E, mag, skyrm, magbind, skyrmbind = process_data(f)
+
+
+N_arr = cat(N_arr,N,dims = ndims(N)+1)
+E_arr = cat(E_arr,E,dims = ndims(E)+1)
+mag_arr = cat(mag_arr,mag,dims = ndims(mag)+1)
+skyrm_arr = cat(skyrm_arr,skyrm,dims = ndims(skyrm)+1)
+magbind_arr = cat(magbind_arr,magbind,dims = ndims(magbind)+1)
+skyrmbind_arr = cat(skyrmbind_arr,skyrmbind,dims = ndims(skyrmbind)+1)
+
 
 plot_arr(N_arr,Temperature,J_space,E_arr,mag_arr,skyrm_arr,magbind_arr,skyrmbind_arr)

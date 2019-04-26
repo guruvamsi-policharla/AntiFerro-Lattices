@@ -184,8 +184,8 @@ function montecarlo(Temperature,N,J_space)
                     end
                 end
                 if jj == 2
-                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack((M_jack[:,3,jj]+M_jack[:,3,jj+1])./2,(M_jack[:,2,jj]+M_jack[:,2,jj+1])./2)
-                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack((skyrm_jack[:,3,jj]+skyrm_jack[:,3,jj+1])./2,(skyrm_jack[:,2,jj]+skyrm_jack[:,2,jj+1])./2)
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = (bindjack(M_jack[:,3,jj],M_jack[:,2,jj])+bindjack(M_jack[:,3,jj+1],M_jack[:,2,jj+1]))/2
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = (bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])+bindjack(skyrm_jack[:,3,jj+1],skyrm_jack[:,2,jj+1]))/2
                 else
                     magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
                     skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])

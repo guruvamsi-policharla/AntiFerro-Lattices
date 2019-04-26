@@ -21,7 +21,7 @@ function test_flip(x, y, J, lat, T)
 
     if(de<0)
         lat[x,y] = a
-        return true,de
+        return true
     elseif(rand() < exp(-de/T))
         lat[x,y] = a
         return true

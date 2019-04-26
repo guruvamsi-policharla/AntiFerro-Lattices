@@ -1,7 +1,7 @@
 #Includes
 using Distributed
 #addprocs(Sys.CPU_THREADS)
-addprocs(6)
+addprocs(1)
 println(nprocs())
 
 #@everywhere include("/home/guru/repos/AntiFerro-Lattices/skyrm_aux.jl")
@@ -23,11 +23,12 @@ using Dates
 #driver
 Tmin = 0.1
 Tchange = 0.1
-Tmax = 1
-N = 4
+Tmax = 0.1
+N = 32
 Temperature = Tmin:Tchange:Tmax
-J_space = [0,0.25,0.5,0.75,1.0]
+#J_space = [0,0.25,0.5,0.75,1.0]
 #J_space = [0.0:0.1:0.3;0.35:0.05:0.65;0.7:0.1:1]
+J_space = [1]
 
 E_temp = SharedArray{Float64,6}(length(Temperature),length(J_space),4,3,2,nprocs()-1)
 mag_temp = SharedArray{Float64,6}(length(Temperature),length(J_space),4,3,2,nprocs()-1)

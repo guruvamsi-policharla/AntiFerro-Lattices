@@ -16,5 +16,5 @@ function bindjack(vec4,vec2)
     jack_avg = mean(vec_jack)
     jack_err = sqrt(abs(mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
 
-    return jack_avg,jack_err
+    return [jack_avg,jack_err]
 end
